@@ -5,3 +5,13 @@ voxcpm.egg-info
 .DS_Store
 ./pretrained_models/
 app_local.py
+.env
+.env.*
+!.env.example
+.hf-cache/
+
+# Claude Code machine-local settings (per-developer, not shared)
+.claude/settings.local.json
+
+# Runtime artifacts
+rebuild.log
