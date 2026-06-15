@@ -193,6 +193,7 @@ if (-not (Resolve-HfCommand)) {
 
     $hfResolved = Resolve-HfCommand
     if (-not $hfResolved) {
+        Write-HfProbeDiagnostic
         Fail "Hugging Face CLI 'hf' is still not available after installation. Please reopen the terminal or check Python Scripts PATH." `
              "安装后仍无法检测到 Hugging Face CLI 'hf'。请重新打开终端，或检查 Python Scripts 目录是否在 PATH 中。"
     }

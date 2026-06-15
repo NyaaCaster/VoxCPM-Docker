@@ -20,6 +20,7 @@ $hfPath = Resolve-HfCommand -PythonExe $python.Source
 if ($hfPath) {
   Write-Host "hf CLI located: $hfPath"
 } else {
+  Write-HfProbeDiagnostic -PythonExe $python.Source
   Write-Warning "hf CLI was installed but could not be located. Reopen the terminal or add Python's Scripts directory to PATH."
 }
 Write-Host "Use: hf-xet\scripts\hf-download.ps1 <repo-id>"
