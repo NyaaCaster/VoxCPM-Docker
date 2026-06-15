@@ -12,6 +12,15 @@ This repository is **only** a Docker Compose deployment wrapper for VoxCPM. It p
 - **Python** on the host (used only by the model pre-download step).
 - A **Hugging Face Access Token** — required by both deployment methods to accelerate model downloads. Generate one at **https://huggingface.co/settings/tokens** and have it ready before you start.
 
+## Get the code
+
+Clone this repository and enter the project directory (all later commands run from there):
+
+```powershell
+git clone https://github.com/NyaaCaster/VoxCPM-Docker.git
+cd VoxCPM-Docker
+```
+
 ## First-time deployment
 
 There are two ways to do the initial setup. Both need your Hugging Face Access Token.
@@ -21,7 +30,7 @@ There are two ways to do the initial setup. Both need your Hugging Face Access T
 Run the interactive one-click script. It prompts you (in English or Chinese) for the host port, the large-file storage path, and your Access Token, then **creates `.env` automatically, downloads the model, builds the image, and starts the container**.
 
 ```powershell
-pwsh -NoProfile -File FirstBuild.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File FirstBuild.ps1
 ```
 
 When it finishes it prints the URL to open. That's the whole setup.

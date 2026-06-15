@@ -12,6 +12,15 @@
 - 宿主机安装 **Python**（仅用于模型预下载步骤）。
 - **Hugging Face Access Token**——两种部署方式都需要它来加速模型下载。请前往 **https://huggingface.co/settings/tokens** 生成，并在开始前准备好。
 
+## 获取代码
+
+克隆本仓库并进入项目目录（后续所有命令都在该目录下执行）：
+
+```powershell
+git clone https://github.com/NyaaCaster/VoxCPM-Docker.git
+cd VoxCPM-Docker
+```
+
 ## 首次部署
 
 首次部署有两种方式，**均需提前准备 Hugging Face Access Token**。
@@ -21,7 +30,7 @@
 运行交互式一键脚本。它会以中英双语提示你输入主机端口、大文件存放路径和 Access Token，随后**自动创建 `.env`、下载模型、构建镜像并启动容器**。
 
 ```powershell
-pwsh -NoProfile -File FirstBuild.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File FirstBuild.ps1
 ```
 
 脚本结束时会打印访问地址，整个部署即告完成。
