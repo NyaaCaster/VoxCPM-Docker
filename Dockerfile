@@ -35,7 +35,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m pip install --upgrade pip setuptools wheel
 
-COPY pyproject.toml README.md README_zh.md LICENSE ./
+COPY pyproject.toml VoxCPM_README.md VoxCPM_README_zh.md LICENSE ./
 COPY src ./src
 COPY app.py ./app.py
 COPY assets ./assets

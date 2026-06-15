@@ -86,10 +86,11 @@ if (-not (Test-Path -LiteralPath $ENV_EXAMPLE)) {
 Step 1 "Configure environment (.env)" "配置环境变量（.env）"
 
 if (Test-Path -LiteralPath $ENV_FILE) {
-    if (-not (AskYesNo ".env already exists. Overwrite it?" "检测到 .env 已存在，是否覆盖？")) {
-        Warn "Keeping the existing .env. Skipping configuration." "保留现有 .env，跳过配置步骤。"
-        $skipEnv = $true
-    }
+    # .env already exists: keep it as-is and skip configuration entirely.
+    # .env 已存在：原样保留，直接跳过配置，进入下载与构建部署。
+    Ok ".env already exists. Skipping configuration and proceeding to deployment." `
+       "检测到 .env 已存在，跳过配置，直接进行部署。"
+    $skipEnv = $true
 }
 
 if (-not $skipEnv) {
