@@ -9,8 +9,7 @@
 ## 前置条件
 
 - **Docker**（含 Compose 插件）。Windows 上若需 GPU 加速，使用 Docker Desktop 的 WSL2 后端并确保 NVIDIA 容器支持可用。
-- 宿主机安装 **Python**（仅用于模型预下载步骤）。
-- **Hugging Face Access Token**——两种部署方式都需要它来加速模型下载。请前往 **https://huggingface.co/settings/tokens** 生成，并在开始前准备好。
+- **Hugging Face Access Token**（可选但推荐）——用于加速并认证模型下载。请前往 **https://huggingface.co/settings/tokens** 生成。模型在容器内下载，宿主机**无需**安装 Python 或 Hugging Face CLI。
 
 ## 获取代码
 
@@ -23,17 +22,17 @@ cd VoxCPM-Docker
 
 ## 首次部署
 
-首次部署有两种方式，**均需提前准备 Hugging Face Access Token**。
+首次部署有两种方式。准备好 Hugging Face Access Token 可加速下载（可选）。
 
 ### 方式一 —— 自动部署（推荐）
 
-运行交互式一键脚本。它会以中英双语提示你输入主机端口、大文件存放路径和 Access Token，随后**自动创建 `.env`、下载模型、构建镜像并启动容器**。
+运行交互式一键脚本。它会以中英双语提示你输入主机端口、大文件存放路径和 Access Token，随后**自动创建 `.env`、构建镜像并启动容器**。模型在容器**首次启动时于容器内自动下载**。
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File FirstBuild.ps1
 ```
 
-脚本结束时会打印访问地址，整个部署即告完成。
+脚本结束时会打印访问地址。注意首次启动时容器需先下载模型，网页界面稍后才可访问；可用 `docker compose -p voxcpm logs -f` 查看下载进度。
 
 ### 方式二 —— 手动部署
 
@@ -46,14 +45,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File FirstBuild.ps1
    ```
 
 2. 编辑 `.env`，配置：
-   - `HF_Token`—— 你的 Hugging Face Access Token（加速下载所需）。
+   - `HF_Token`—— 你的 Hugging Face Access Token（加速/认证下载所需，可留空匿名下载）。
    - `VOXCPM_HOST_PORT`—— 网页界面的主机端口（容器内部监听 `8808`）。
    - `VOXCPM_ASSET_ROOT`—— 模型、缓存、输出等大体积文件的存放路径。请指向空间充足的磁盘，例如 `E:/DockerRes/VoxCPM`；默认为项目目录。
 
-3. 预下载模型，然后构建并启动：
+3. 构建并启动（模型会在容器首次启动时自动下载到 bind mount）：
 
    ```powershell
-   python scripts/download_models.py
    docker compose up --build -d
    ```
 

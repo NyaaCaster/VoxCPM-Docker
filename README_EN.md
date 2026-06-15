@@ -9,8 +9,7 @@ This repository is **only** a Docker Compose deployment wrapper for VoxCPM. It p
 ## Prerequisites
 
 - **Docker** with the Compose plugin. For GPU acceleration on Windows, use Docker Desktop with the WSL2 backend and working NVIDIA container support.
-- **Python** on the host (used only by the model pre-download step).
-- A **Hugging Face Access Token** — required by both deployment methods to accelerate model downloads. Generate one at **https://huggingface.co/settings/tokens** and have it ready before you start.
+- A **Hugging Face Access Token** (optional but recommended) to accelerate and authenticate model downloads. Generate one at **https://huggingface.co/settings/tokens**. The model is downloaded inside the container, so the host needs **no** Python or Hugging Face CLI.
 
 ## Get the code
 
@@ -23,17 +22,17 @@ cd VoxCPM-Docker
 
 ## First-time deployment
 
-There are two ways to do the initial setup. Both need your Hugging Face Access Token.
+There are two ways to do the initial setup. A Hugging Face Access Token speeds up downloads (optional).
 
 ### Option A — Automatic (recommended)
 
-Run the interactive one-click script. It prompts you (in English or Chinese) for the host port, the large-file storage path, and your Access Token, then **creates `.env` automatically, downloads the model, builds the image, and starts the container**.
+Run the interactive one-click script. It prompts you (in English or Chinese) for the host port, the large-file storage path, and your Access Token, then **creates `.env` automatically, builds the image, and starts the container**. The model is downloaded inside the container on first start.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File FirstBuild.ps1
 ```
 
-When it finishes it prints the URL to open. That's the whole setup.
+When it finishes it prints the URL to open. Note that on first start the container downloads the model before the web UI becomes reachable; watch progress with `docker compose -p voxcpm logs -f`.
 
 ### Option B — Manual
 
@@ -46,14 +45,13 @@ Create `.env` yourself from the template and start Compose:
    ```
 
 2. Edit `.env` and set:
-   - `HF_Token` — your Hugging Face Access Token (required for accelerated downloads).
+   - `HF_Token` — your Hugging Face Access Token (for accelerated/authenticated downloads; leave empty for anonymous).
    - `VOXCPM_HOST_PORT` — the host port for the web UI (the container listens on `8808`).
    - `VOXCPM_ASSET_ROOT` — where to store large files (models, caches, outputs). Point this at a drive with enough free space, e.g. `E:/DockerRes/VoxCPM`. It defaults to the project directory.
 
-3. Pre-download the model, then build and start:
+3. Build and start (the model is downloaded inside the container on first start, into the bind mount):
 
    ```powershell
-   python scripts/download_models.py
    docker compose up --build -d
    ```
 

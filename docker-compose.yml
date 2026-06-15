@@ -24,11 +24,16 @@ services:
       - "${VOXCPM_HOST_PORT:-5106}:8808"
 
     environment:
-      # Use /models/VoxCPM2 for the pre-downloaded host model (default), or set
-      # VOXCPM_MODEL_ID=openbmb/VoxCPM2 in .env to download from Hugging Face.
+      # Use /models/VoxCPM2 for the model downloaded inside the container at
+      # startup (default), or set VOXCPM_MODEL_ID=openbmb/VoxCPM2 in .env to let
+      # the app resolve/download it from Hugging Face at load time instead.
       VOXCPM_MODEL_ID: ${VOXCPM_MODEL_ID:-/models/VoxCPM2}
       VOXCPM_DEVICE: ${VOXCPM_DEVICE:-auto}
       VOXCPM_PORT: "8808"
+
+      # Hugging Face token (from .env) for authenticated / accelerated downloads
+      # performed inside the container. Optional; empty means anonymous access.
+      HF_TOKEN: ${HF_Token:-}
 
       # Container timezone for log timestamps and scheduling.
       TZ: ${TZ:-Asia/Shanghai}
@@ -38,6 +43,7 @@ services:
       HF_HOME: /cache/huggingface
       HUGGINGFACE_HUB_CACHE: /cache/huggingface/hub
       TRANSFORMERS_CACHE: /cache/huggingface/transformers
+      HF_XET_HIGH_PERFORMANCE: "1"
       TORCH_HOME: /cache/torch
       GRADIO_TEMP_DIR: /tmp/gradio
       TOKENIZERS_PARALLELISM: "false"
@@ -61,9 +67,12 @@ services:
               count: all
               capabilities: [gpu]
 
+    # The container downloads the model on first start before the app comes up,
+    # which can take a long time. A generous start_period keeps the container
+    # from being reported unhealthy while that first download is in progress.
     healthcheck:
       test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8808/\", timeout=5).read()' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 10
-      start_period: 120s
+      start_period: 1800s

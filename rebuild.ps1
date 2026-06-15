@@ -7,8 +7,9 @@ $PROJECT = "voxcpm"
 # project's container/network, never the other containers on the host.
 #
 # Large assets (models, caches, data, outputs) live under VOXCPM_ASSET_ROOT as
-# bind mounts and are NOT part of the image. This script never re-downloads them;
-# use `python scripts/download_models.py` for that, separately and only once.
+# bind mounts and are NOT part of the image. The container downloads the model
+# into that bind mount on first start and skips it when already present, so this
+# script never re-downloads the weights.
 
 # Run from the script's own directory so relative paths (.env, compose) resolve
 # regardless of the caller's current location.

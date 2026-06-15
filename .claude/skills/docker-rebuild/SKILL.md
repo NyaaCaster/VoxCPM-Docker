@@ -31,7 +31,7 @@ pwsh -NoProfile -File rebuild.ps1
 
 ## 重要约束
 
-- **不重复下载模型**：模型权重和缓存是 `VOXCPM_ASSET_ROOT` 下的 bind mount，不在镜像里。rebuild 不碰它们。首次或换模型时才单独运行 `python scripts/download_models.py`。
+- **不重复下载模型**：模型权重和缓存是 `VOXCPM_ASSET_ROOT` 下的 bind mount，不在镜像里。模型由容器在首次启动时（`docker/entrypoint.sh` → `scripts/fetch_model.py`）下载到该 bind mount，已存在即跳过；rebuild 不碰它们，也不会重新下载。
 - **悬空镜像清理只清 dangling**：脚本只删 `dangling=true` 的无 tag 镜像，不会动其他项目的有 tag 镜像。
 - **GPU 模式**：compose 默认请求 NVIDIA GPU。若环境无 GPU，先在 `.env` 设 `VOXCPM_DEVICE=cpu` 并按需注释 compose 的 `deploy` 块，再 rebuild。
 

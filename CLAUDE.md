@@ -14,7 +14,7 @@ pwsh -NoProfile -File rebuild.ps1
 
 ## 首次部署
 
-全新环境的首次部署使用交互式 `FirstBuild.ps1`：引导生成 `.env`（端口 / 大文件路径 / HF token）→ 下载模型 → 构建并启动容器 → 打印访问地址。提示支持中英双语，脚本以 UTF-8 带 BOM 保存以保证 PowerShell 5.1 下中文不乱码；生成的 `.env` 为 UTF-8 无 BOM 的纯键值对。`FirstBuild.ps1` 用于初始化，`rebuild.ps1` 用于此后的迭代重建。
+全新环境的首次部署使用交互式 `FirstBuild.ps1`：引导生成 `.env`（端口 / 大文件路径 / HF token）→ 构建并启动容器 → 打印访问地址。模型在容器**首次启动时于容器内自动下载**到 bind mount，无需宿主机 Python 或 `hf` CLI。提示支持中英双语，脚本以 UTF-8 带 BOM 保存以保证 PowerShell 5.1 下中文不乱码；生成的 `.env` 为 UTF-8 无 BOM 的纯键值对。`FirstBuild.ps1` 用于初始化，`rebuild.ps1` 用于此后的迭代重建。
 
 ## 配置唯一来源（SSOT）
 
@@ -25,5 +25,5 @@ pwsh -NoProfile -File rebuild.ps1
 
 ## 模型资产
 
-- 模型权重通过 `python scripts/download_models.py` 预下载到 `VOXCPM_ASSET_ROOT`，**与镜像构建解耦**，rebuild 不会重复下载。
-- Hugging Face 文件只通过 `hf-xet` 下载，不用 aria2。
+- 模型权重由**容器自身**在启动时下载（`docker/entrypoint.sh` → `scripts/fetch_model.py`），写入 bind mount 的 `${VOXCPM_ASSET_ROOT}/models/VoxCPM2`，**与镜像层解耦**，rebuild 不会重复下载（已存在即跳过）。
+- 下载在容器内通过 `huggingface_hub`（启用 `hf-xet` 加速）完成，不依赖宿主机的 Python 或 `hf` CLI。`.env` 的 `HF_Token` 经 compose 以 `HF_TOKEN` 传入容器用于认证/加速。

@@ -27,9 +27,6 @@ $PROJECT       = "voxcpm"
 $ENV_EXAMPLE   = Join-Path $PSScriptRoot ".env.example"
 $ENV_FILE      = Join-Path $PSScriptRoot ".env"
 $COMPOSE_FILE  = Join-Path $PSScriptRoot "docker-compose.yml"
-$DOWNLOAD_PY   = Join-Path $PSScriptRoot "scripts\download_models.py"
-$HF_INSTALL_PS = Join-Path $PSScriptRoot "hf-xet\scripts\install-hf-tools.ps1"
-$HF_PATH_PS    = Join-Path $PSScriptRoot "hf-xet\scripts\hf-path.ps1"
 $DEFAULT_PORT  = 8808
 
 # ---------------------------------------------------------------------------
@@ -43,7 +40,7 @@ function Warn([string]$en, [string]$zh) { Write-Host (L $en $zh) -ForegroundColo
 function Step([int]$n, [string]$en, [string]$zh) {
     Write-Host ""
     Write-Host ("=" * 64) -ForegroundColor DarkGray
-    Write-Host (L "[$n/4] $en" "[$n/4] $zh") -ForegroundColor Magenta
+    Write-Host (L "[$n/3] $en" "[$n/3] $zh") -ForegroundColor Magenta
     Write-Host ("=" * 64) -ForegroundColor DarkGray
 }
 function Fail([string]$en, [string]$zh) {
@@ -74,9 +71,6 @@ if ($sel.Trim() -eq "2") { $script:Lang = "zh" } else { $script:Lang = "en" }
 # ---------------------------------------------------------------------------
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     Fail "Docker is not installed or not in PATH." "未检测到 Docker，请先安装并确保其在 PATH 中。"
-}
-if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-    Fail "Python is not installed or not in PATH (needed for model download)." "未检测到 Python（下载模型需要），请先安装并确保其在 PATH 中。"
 }
 if (-not (Test-Path -LiteralPath $ENV_EXAMPLE)) {
     Fail ".env.example not found next to this script." "脚本同目录下未找到 .env.example。"
@@ -160,58 +154,11 @@ if (-not $skipEnv) {
 }
 
 # ===========================================================================
-# Step 2: Download model / 下载模型
+# Step 2: Build and start containers / 构建并启动容器
 # ===========================================================================
-Step 2 "Download model (live progress)" "下载模型（实时进度）"
-Info "Pre-downloading the VoxCPM model. This may take a while on first run..." `
-     "正在预下载 VoxCPM 模型，首次运行可能耗时较长……"
-
-if (-not (Test-Path -LiteralPath $DOWNLOAD_PY)) {
-    Fail "scripts/download_models.py not found." "未找到 scripts/download_models.py。"
-}
-
-# Ensure the Hugging Face CLI exists before starting the long model download.
-# 在开始下载模型前确保 Hugging Face CLI 可用，避免下载阶段才失败。
-# Store/user pip installs place hf.exe in a Scripts dir that is usually NOT on
-# PATH; Resolve-HfCommand probes Python's script dirs and prepends the right one
-# to $env:PATH, which the python/powershell child processes for the download inherit.
-. $HF_PATH_PS
-
-if (-not (Resolve-HfCommand)) {
-    if (-not (Test-Path -LiteralPath $HF_INSTALL_PS)) {
-        Fail "Hugging Face CLI 'hf' is not installed, and hf-xet installer was not found." `
-             "未安装 Hugging Face CLI 'hf'，且未找到 hf-xet 安装脚本。"
-    }
-
-    Info "Hugging Face CLI 'hf' was not found. Installing/updating huggingface_hub with hf-xet support..." `
-         "未检测到 Hugging Face CLI 'hf'。正在安装/更新 huggingface_hub 与 hf-xet 支持……"
-    powershell -NoProfile -ExecutionPolicy Bypass -File $HF_INSTALL_PS
-    if ($LASTEXITCODE -ne 0) {
-        Fail "Failed to install Hugging Face tools (exit code $LASTEXITCODE)." `
-             "Hugging Face 工具安装失败（退出码 $LASTEXITCODE）。"
-    }
-
-    $hfResolved = Resolve-HfCommand
-    if (-not $hfResolved) {
-        Write-HfProbeDiagnostic
-        Fail "Hugging Face CLI 'hf' is still not available after installation. Please reopen the terminal or check Python Scripts PATH." `
-             "安装后仍无法检测到 Hugging Face CLI 'hf'。请重新打开终端，或检查 Python Scripts 目录是否在 PATH 中。"
-    }
-    Ok "Hugging Face tools are ready: $hfResolved" "Hugging Face 工具已就绪：$hfResolved"
-}
-
-# Run in the foreground so download progress streams live to the console.
-# 前台运行，使下载进度实时刷新到终端。
-python $DOWNLOAD_PY
-if ($LASTEXITCODE -ne 0) {
-    Fail "Model download failed (exit code $LASTEXITCODE)." "模型下载失败（退出码 $LASTEXITCODE）。"
-}
-Ok "Model downloaded." "模型下载完成。"
-
-# ===========================================================================
-# Step 3: Build and start containers / 构建并启动容器
-# ===========================================================================
-Step 3 "Build and start containers (live progress)" "构建并启动容器（实时进度）"
+Step 2 "Build and start containers (live progress)" "构建并启动容器（实时进度）"
+Info "The model is downloaded automatically inside the container on first start (into the bind-mounted models directory)." `
+     "模型将在容器首次启动时于容器内自动下载（写入 bind mount 的模型目录）。"
 
 Info "Building the Docker image..." "正在构建 Docker 镜像……"
 docker compose -p $PROJECT -f $COMPOSE_FILE build
@@ -227,7 +174,7 @@ if ($LASTEXITCODE -ne 0) {
 Ok "Container is up." "容器已启动。"
 
 # ===========================================================================
-# Step 4: Done / 完成
+# Step 3: Done / 完成
 # ===========================================================================
 # Resolve the final host port from .env for the URL.
 # 从 .env 读取最终端口用于访问地址。
@@ -238,9 +185,11 @@ if (Test-Path -LiteralPath $ENV_FILE) {
     }
 }
 
-Step 4 "Deployment complete" "部署完成"
+Step 3 "Deployment complete" "部署完成"
 Ok "VoxCPM is ready!" "VoxCPM 已就绪！"
 Write-Host ""
+Warn "On first start the container downloads the model before the web UI becomes reachable; this can take a while. Watch progress with: docker compose -p $PROJECT logs -f" `
+     "首次启动时容器会先下载模型，网页界面稍后才可访问，可能需要一些时间。可用以下命令查看进度：docker compose -p $PROJECT logs -f"
 Write-Host (L "  Open the web UI at: " "  请在浏览器中访问： ") -NoNewline -ForegroundColor White
 Write-Host ("http://localhost:{0}" -f $finalPort) -ForegroundColor Green
 Write-Host ""

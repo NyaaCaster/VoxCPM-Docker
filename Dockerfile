@@ -6,6 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     HF_HOME=/cache/huggingface \
     HUGGINGFACE_HUB_CACHE=/cache/huggingface/hub \
     TRANSFORMERS_CACHE=/cache/huggingface/transformers \
+    HF_XET_HIGH_PERFORMANCE=1 \
     TORCH_HOME=/cache/torch \
     GRADIO_TEMP_DIR=/tmp/gradio \
     TOKENIZERS_PARALLELISM=false \
@@ -42,7 +43,16 @@ COPY assets ./assets
 
 RUN python3 -m pip install --index-url https://download.pytorch.org/whl/cu124 \
         "torch>=2.5.0" "torchaudio>=2.5.0" \
-    && python3 -m pip install -e .
+    && python3 -m pip install -e . \
+    && python3 -m pip install -U "huggingface_hub[hf_xet]"
+
+# Model download happens inside the container at startup, into the bind-mounted
+# /models, so weights stay out of the image. The entrypoint ensures the model is
+# present, then launches the app.
+COPY scripts/fetch_model.py ./scripts/fetch_model.py
+COPY docker/entrypoint.sh /app/docker/entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker/entrypoint.sh \
+    && chmod +x /app/docker/entrypoint.sh
 
 RUN mkdir -p \
         /models \
@@ -54,4 +64,4 @@ RUN mkdir -p \
 
 EXPOSE 8808
 
-CMD ["bash", "-lc", "python3 app.py --model-id \"${VOXCPM_MODEL_ID}\" --device \"${VOXCPM_DEVICE}\" --port \"${VOXCPM_PORT}\""]
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
