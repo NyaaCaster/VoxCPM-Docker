@@ -28,6 +28,7 @@ $ENV_EXAMPLE   = Join-Path $PSScriptRoot ".env.example"
 $ENV_FILE      = Join-Path $PSScriptRoot ".env"
 $COMPOSE_FILE  = Join-Path $PSScriptRoot "docker-compose.yml"
 $DOWNLOAD_PY   = Join-Path $PSScriptRoot "scripts\download_models.py"
+$HF_INSTALL_PS = Join-Path $PSScriptRoot "hf-xet\scripts\install-hf-tools.ps1"
 $DEFAULT_PORT  = 8808
 
 # ---------------------------------------------------------------------------
@@ -166,6 +167,29 @@ Info "Pre-downloading the VoxCPM model. This may take a while on first run..." `
 
 if (-not (Test-Path -LiteralPath $DOWNLOAD_PY)) {
     Fail "scripts/download_models.py not found." "未找到 scripts/download_models.py。"
+}
+
+# Ensure the Hugging Face CLI exists before starting the long model download.
+# 在开始下载模型前确保 Hugging Face CLI 可用，避免下载阶段才失败。
+if (-not (Get-Command hf -ErrorAction SilentlyContinue)) {
+    if (-not (Test-Path -LiteralPath $HF_INSTALL_PS)) {
+        Fail "Hugging Face CLI 'hf' is not installed, and hf-xet installer was not found." `
+             "未安装 Hugging Face CLI 'hf'，且未找到 hf-xet 安装脚本。"
+    }
+
+    Info "Hugging Face CLI 'hf' was not found. Installing/updating huggingface_hub with hf-xet support..." `
+         "未检测到 Hugging Face CLI 'hf'。正在安装/更新 huggingface_hub 与 hf-xet 支持……"
+    powershell -NoProfile -ExecutionPolicy Bypass -File $HF_INSTALL_PS
+    if ($LASTEXITCODE -ne 0) {
+        Fail "Failed to install Hugging Face tools (exit code $LASTEXITCODE)." `
+             "Hugging Face 工具安装失败（退出码 $LASTEXITCODE）。"
+    }
+
+    if (-not (Get-Command hf -ErrorAction SilentlyContinue)) {
+        Fail "Hugging Face CLI 'hf' is still not available after installation. Please reopen the terminal or check Python Scripts PATH." `
+             "安装后仍无法检测到 Hugging Face CLI 'hf'。请重新打开终端，或检查 Python Scripts 目录是否在 PATH 中。"
+    }
+    Ok "Hugging Face tools are ready." "Hugging Face 工具已就绪。"
 }
 
 # Run in the foreground so download progress streams live to the console.

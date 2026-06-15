@@ -16,3 +16,6 @@ app_local.py
 # Runtime artifacts
 rebuild.log
 *_test.log
+
+# Local scratch / screenshots (not shared)
+.temp/
