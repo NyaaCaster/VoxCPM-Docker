@@ -29,6 +29,7 @@ $ENV_FILE      = Join-Path $PSScriptRoot ".env"
 $COMPOSE_FILE  = Join-Path $PSScriptRoot "docker-compose.yml"
 $DOWNLOAD_PY   = Join-Path $PSScriptRoot "scripts\download_models.py"
 $HF_INSTALL_PS = Join-Path $PSScriptRoot "hf-xet\scripts\install-hf-tools.ps1"
+$HF_PATH_PS    = Join-Path $PSScriptRoot "hf-xet\scripts\hf-path.ps1"
 $DEFAULT_PORT  = 8808
 
 # ---------------------------------------------------------------------------
@@ -171,7 +172,12 @@ if (-not (Test-Path -LiteralPath $DOWNLOAD_PY)) {
 
 # Ensure the Hugging Face CLI exists before starting the long model download.
 # 在开始下载模型前确保 Hugging Face CLI 可用，避免下载阶段才失败。
-if (-not (Get-Command hf -ErrorAction SilentlyContinue)) {
+# Store/user pip installs place hf.exe in a Scripts dir that is usually NOT on
+# PATH; Resolve-HfCommand probes Python's script dirs and prepends the right one
+# to $env:PATH, which the python/powershell child processes for the download inherit.
+. $HF_PATH_PS
+
+if (-not (Resolve-HfCommand)) {
     if (-not (Test-Path -LiteralPath $HF_INSTALL_PS)) {
         Fail "Hugging Face CLI 'hf' is not installed, and hf-xet installer was not found." `
              "未安装 Hugging Face CLI 'hf'，且未找到 hf-xet 安装脚本。"
@@ -185,11 +191,12 @@ if (-not (Get-Command hf -ErrorAction SilentlyContinue)) {
              "Hugging Face 工具安装失败（退出码 $LASTEXITCODE）。"
     }
 
-    if (-not (Get-Command hf -ErrorAction SilentlyContinue)) {
+    $hfResolved = Resolve-HfCommand
+    if (-not $hfResolved) {
         Fail "Hugging Face CLI 'hf' is still not available after installation. Please reopen the terminal or check Python Scripts PATH." `
              "安装后仍无法检测到 Hugging Face CLI 'hf'。请重新打开终端，或检查 Python Scripts 目录是否在 PATH 中。"
     }
-    Ok "Hugging Face tools are ready." "Hugging Face 工具已就绪。"
+    Ok "Hugging Face tools are ready: $hfResolved" "Hugging Face 工具已就绪：$hfResolved"
 }
 
 # Run in the foreground so download progress streams live to the console.

@@ -23,8 +23,9 @@ if (-not $EnvPath) {
 $workDir = (Get-Location).Path
 . "$PSScriptRoot\hf-env.ps1" -EnvPath $EnvPath -WorkDir $workDir
 
-$hf = Get-Command hf -ErrorAction SilentlyContinue
-if (-not $hf) {
+. "$PSScriptRoot\hf-path.ps1"
+$hfPath = Resolve-HfCommand
+if (-not $hfPath) {
   throw "Hugging Face CLI 'hf' not found. Run hf-xet\scripts\install-hf-tools.ps1 first."
 }
 
@@ -45,5 +46,5 @@ if ($env:HF_TOKEN) { $argsList += @('--token', $env:HF_TOKEN) }
 
 Write-Host "Running: hf download $RepoId -> $LocalDir"
 Write-Host "Xet high performance: $env:HF_XET_HIGH_PERFORMANCE; cache: $env:HF_HUB_CACHE"
-& $hf.Source @argsList
+& $hfPath @argsList
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
