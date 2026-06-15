@@ -2,6 +2,16 @@
 
 This project is deployed as a single Gradio service. Large, persistent, low-frequency assets are bind-mounted under the directory set by `VOXCPM_ASSET_ROOT` so model weights and caches do not grow the Docker image, Docker volumes, WSL virtual disk, or the system drive.
 
+## Quick start (one-click)
+
+For a guided first-time setup, run the interactive `FirstBuild.ps1`. It generates `.env` (port, asset path, Hugging Face token), pre-downloads the model, builds and starts the container, and prints the URL to open. It supports English and Chinese prompts.
+
+```powershell
+pwsh -NoProfile -File FirstBuild.ps1
+```
+
+The rest of this document describes the manual steps that `FirstBuild.ps1` automates.
+
 `VOXCPM_ASSET_ROOT` is the single source of truth for the host asset location. It is defined once in `.env` and consumed by `docker-compose.yml` and `scripts/download_models.py`. The `.env.example` default is `.` (the project root) for portability; for production set it to a storage drive with enough free space, for example `E:/DockerRes/VoxCPM`. The examples below use `$ASSET_ROOT` as a placeholder for that value.
 
 ## Host directory layout

@@ -12,6 +12,10 @@ pwsh -NoProfile -File rebuild.ps1
 
 `rebuild.ps1` 固定了 compose project 名 `voxcpm`，流程为 down → build → 清理悬空镜像 → up -d → 显示状态，只操作本项目资源，不影响宿主机其他容器。
 
+## 首次部署
+
+全新环境的首次部署使用交互式 `FirstBuild.ps1`：引导生成 `.env`（端口 / 大文件路径 / HF token）→ 下载模型 → 构建并启动容器 → 打印访问地址。提示支持中英双语，脚本以 UTF-8 带 BOM 保存以保证 PowerShell 5.1 下中文不乱码；生成的 `.env` 为 UTF-8 无 BOM 的纯键值对。`FirstBuild.ps1` 用于初始化，`rebuild.ps1` 用于此后的迭代重建。
+
 ## 配置唯一来源（SSOT）
 
 - 所有可调参数集中在 `.env`，每项在 `docker-compose.yml` 中都有默认值兜底，无需手动编辑 compose 文件。
